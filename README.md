@@ -30,22 +30,20 @@ useful while tuning. Examples: `?heroT=0.3` (drone sweep), `?heroT=0.55`
 (fusion in progress), `?heroT=0.7` (fused map / orbit), `?heroT=0.84`
 (CCTV wall).
 
-## Deploy to Netlify
+## Deploy to Netlify (GitHub → Netlify)
+
+Repo: **https://github.com/johnkimdy/panosynth**
 
 The hero animation needs an HTTP origin (ES modules + Three.js). Netlify serves
 the folder over HTTPS, so the live scene works out of the box — no build step.
 
-### Option A — drag and drop
+**Live site:** https://dulcet-madeleine-d6675c.netlify.app
 
-1. Sign in at [app.netlify.com](https://app.netlify.com).
-2. Drag the project folder onto the deploy drop zone.
-3. Wait for the deploy to finish; open the `*.netlify.app` URL.
-
-### Option B — Netlify CLI
+Pushes to `main` auto-deploy via Netlify ↔ GitHub sync (`netlify.toml` sets
+`publish = "."`, no build command). To deploy manually from a clone:
 
 ```sh
-npx netlify-cli deploy --prod --dir .
-# first run: npx netlify-cli login && npx netlify-cli init
+git push origin main
 ```
 
 ### Access-request emails → panosynth@gmail.com
