@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panosynth — One Live Map. Not a Wall of Screens.</title>
+  <meta name="description" content="Panosynth fuses many cameras and drones into a single real-time 3D/4D picture of the battlespace." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ===================== TOP BAR ===================== -->
+  <header class="topbar">
+    <div class="wordmark" aria-label="Panosynth">
+      <span class="wordmark-tick" aria-hidden="true"></span>PANOSYNTH
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-status mono" id="sysStatus" aria-live="off">SYS // STANDBY</span>
+      <button class="cta-button" id="ctaTry" type="button">
+        <span class="cta-label">TRY PANOSYNTH</span>
+        <span class="cta-corners" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ===================== HERO ===================== -->
+    <section class="hero" aria-label="Panosynth live terrain fusion demonstration">
+      <canvas id="heroCanvas" aria-hidden="true"></canvas>
+
+      <!-- Static cinematic still: shown for reduced-motion users without WebGL,
+           or whenever WebGL is unavailable. Pure procedural SVG, no assets. -->
+      <div class="hero-still" id="heroStill" hidden aria-hidden="true">
+        <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Stylized dark ridgeline terrain with camera view-cones fused into one glowing 3D point-cloud map">
+          <defs>
+            <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#0a1318"/><stop offset="1" stop-color="#05070A"/>
+            </linearGradient>
+            <radialGradient id="mapGlow" cx="0.5" cy="0.62" r="0.5">
+              <stop offset="0" stop-color="#2DD4BF" stop-opacity="0.35"/>
+              <stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="1200" height="600" fill="url(#haze)"/>
+          <ellipse cx="600" cy="380" rx="420" ry="170" fill="url(#mapGlow)"/>
+          <polyline points="0,330 120,250 230,310 360,210 480,290 620,190 760,280 880,220 1010,300 1120,240 1200,290" fill="none" stroke="#1d3a3c" stroke-width="1.5"/>
+          <polyline points="0,400 150,330 280,380 420,300 560,370 700,290 840,360 980,310 1120,370 1200,340" fill="none" stroke="#15282b" stroke-width="1.5"/>
+          <polyline points="0,470 180,420 340,460 520,400 700,450 880,400 1060,450 1200,420" fill="none" stroke="#0e1c1f" stroke-width="1.5"/>
+          <g stroke="#2DD4BF" stroke-width="1" fill="none" opacity="0.7">
+            <path d="M360 210 L320 150 M360 210 L420 145 M320 150 L420 145"/>
+            <path d="M760 280 L715 215 M760 280 L820 210 M715 215 L820 210"/>
+          </g>
+          <g fill="#2DD4BF">
+            <circle cx="500" cy="350" r="1.6" opacity="0.8"/><circle cx="540" cy="330" r="1.4" opacity="0.6"/>
+            <circle cx="585" cy="345" r="1.7" opacity="0.9"/><circle cx="630" cy="325" r="1.4" opacity="0.7"/>
+            <circle cx="670" cy="350" r="1.6" opacity="0.8"/><circle cx="560" cy="370" r="1.3" opacity="0.5"/>
+            <circle cx="615" cy="372" r="1.5" opacity="0.7"/><circle cx="475" cy="372" r="1.2" opacity="0.5"/>
+            <circle cx="700" cy="372" r="1.3" opacity="0.5"/><circle cx="652" cy="300" r="1.4" opacity="0.6"/>
+          </g>
+          <circle cx="600" cy="340" r="2.2" fill="#F5A524"/>
+        </svg>
+      </div>
+
+      <!-- HUD chrome -->
+      <div class="hero-hud" aria-hidden="true">
+        <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+        <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+        <div class="hud-readout hud-tl mono">
+          <span id="hudGrid">GRID 38N 0412 7731</span>
+          <span id="hudAz">AZ 274.6° · EL +03.2°</span>
+        </div>
+        <div class="hud-readout hud-tr mono">
+          <span>NODES 06 · SWARMS 03</span>
+          <span id="hudFusion">FUSION 00.0%</span>
+        </div>
+        <div class="hud-readout hud-bl mono">
+          <span id="hudClock">T+00:00:00</span>
+        </div>
+      </div>
+
+      <!-- Legacy CCTV wall overlay (contrast cut, built by main.js) -->
+      <div class="cctv-overlay" id="cctvOverlay" aria-hidden="true"></div>
+
+      <!-- Loop-reset dip -->
+      <div class="hero-dip" id="heroDip" aria-hidden="true"></div>
+
+      <!-- Copy -->
+      <div class="hero-copy">
+        <p class="kicker mono">REAL-TIME MULTI-SENSOR RECONSTRUCTION</p>
+        <h1>ONE LIVE MAP.<br />NOT A WALL OF SCREENS.</h1>
+        <p class="subhead">
+          Panosynth fuses many cameras and drones into a single real-time 3D/4D
+          picture of the battlespace — current movement in view, stale clutter gone.
+        </p>
+        <div class="hero-actions">
+          <a class="hero-cta mono" href="#access">REQUEST ACCESS</a>
+          <span class="hero-hint mono" aria-hidden="true">▼ SITREP BELOW</span>
+        </div>
+      </div>
+
+      <div class="scanlines" aria-hidden="true"></div>
+      <div class="vignette" aria-hidden="true"></div>
+    </section>
+
+    <!-- ===================== THE PROBLEM ===================== -->
+    <section class="section section-problem" id="problem">
+      <div class="section-head">
+        <span class="section-index mono">01</span>
+        <h2 class="mono">THE PROBLEM</h2>
+        <span class="section-rule" aria-hidden="true"></span>
+      </div>
+      <div class="problem-grid">
+        <div class="problem-stat reveal">
+          <span class="stat-num mono">40+</span>
+          <span class="stat-label mono">FEEDS PER OPERATOR</span>
+          <p>A wall of disconnected 2D tiles. Every screen is a separate world with its own angle, its own blind spots, its own backlog.</p>
+        </div>
+        <div class="problem-stat reveal">
+          <span class="stat-num mono">0</span>
+          <span class="stat-label mono">SHARED GEOMETRY</span>
+          <p>Nothing tells the operator where one camera's edge meets the next. Handoffs between feeds are guesswork under time pressure.</p>
+        </div>
+        <div class="problem-stat reveal">
+          <span class="stat-num mono">MISSED</span>
+          <span class="stat-label mono">DETECTIONS</span>
+          <p>Cognitive overload is a sensor failure. The intrusion that matters is on tile 31 of 48 — and nobody is looking at tile 31.</p>
+        </div>
+      </div>
+      <p class="problem-verdict mono reveal">VERDICT // THE BOTTLENECK IS NOT THE CAMERAS. IT IS THE WALL.</p>
+    </section>
+
+    <!-- ===================== WHAT IT DOES ===================== -->
+    <section class="section section-capabilities" id="capabilities">
+      <div class="section-head">
+        <span class="section-index mono">02</span>
+        <h2 class="mono">WHAT IT DOES</h2>
+        <span class="section-rule" aria-hidden="true"></span>
+      </div>
+      <div class="cards">
+        <article class="card reveal">
+          <span class="card-tag mono">CAP / 01</span>
+          <h3 class="mono">MULTI-CAMERA FUSION</h3>
+          <p>Every fixed post and every airborne sensor is registered into one shared geometry. Overlaps reinforce; gaps are visible, not invisible.</p>
+          <span class="card-foot mono">N SENSORS → 1 MAP</span>
+        </article>
+        <article class="card reveal">
+          <span class="card-tag mono">CAP / 02</span>
+          <h3 class="mono">LIVE 4D</h3>
+          <p>Static terrain persists. Moving actors render now. Past residue disappears. The map shows the current state of the ground — nothing more, nothing less.</p>
+          <span class="card-foot mono">T = NOW</span>
+        </article>
+        <article class="card reveal">
+          <span class="card-tag mono">CAP / 03</span>
+          <h3 class="mono">BUILT TO SCALE</h3>
+          <p>Start with the fixed posts you already own. Add drone swarms as coverage demands. The map does not care where the pixels come from.</p>
+          <span class="card-foot mono">POSTS → SWARMS</span>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===================== ACCESS ===================== -->
+    <section class="section section-access" id="access">
+      <div class="section-head">
+        <span class="section-index mono">03</span>
+        <h2 class="mono">ACCESS</h2>
+        <span class="section-rule" aria-hidden="true"></span>
+      </div>
+      <div class="access-inner reveal">
+        <p class="access-lede">
+          Panosynth is in controlled evaluation with selected partners.
+          Request access and we will be in contact.
+        </p>
+        <form class="access-form" id="accessForm" name="access" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+          <input type="hidden" name="form-name" value="access" />
+          <p class="hp-field" hidden>
+            <label>Don't fill this out: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+          </p>
+          <label class="mono" for="accessEmail">CONTACT EMAIL</label>
+          <div class="access-row">
+            <input type="email" id="accessEmail" name="email" required
+                   placeholder="name@organization.gov" autocomplete="email" />
+            <button type="submit" class="mono">REQUEST ACCESS</button>
+          </div>
+          <p class="form-note mono" id="accessNote" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="footer mono">
+    <span>PANOSYNTH // 00.0000°N 000.0000°E — GRID REF WITHHELD</span>
+    <span><a href="mailto:panosynth@gmail.com">PANOSYNTH@GMAIL.COM</a></span>
+    <span>© 2026 PANOSYNTH. ALL GEOMETRY PROCEDURAL.</span>
+  </footer>
+
+  <!-- ===================== DEMO MODAL ===================== -->
+  <dialog class="demo-modal" id="demoModal" aria-labelledby="demoModalTitle">
+    <div class="modal-frame">
+      <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
+      <span class="hud-corner bl"></span><span class="hud-corner br"></span>
+      <p class="modal-tag mono">DEMO CHANNEL // RESTRICTED</p>
+      <h2 id="demoModalTitle" class="mono">LIVE DEMO IS INVITE-ONLY</h2>
+      <p>The operational demo runs on a closed channel and is opened per-organization.
+         Leave a contact point and we will queue your clearance.</p>
+      <form class="access-form" id="modalForm" name="demo-queue" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+        <input type="hidden" name="form-name" value="demo-queue" />
+        <p class="hp-field" hidden>
+          <label>Don't fill this out: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+        </p>
+        <label class="mono" for="modalEmail">CONTACT EMAIL</label>
+        <div class="access-row">
+          <input type="email" id="modalEmail" name="email" required
+                 placeholder="name@organization.gov" autocomplete="email" />
+          <button type="submit" class="mono">JOIN QUEUE</button>
+        </div>
+        <p class="form-note mono" id="modalNote" role="status" aria-live="polite"></p>
+      </form>
+      <button class="modal-close mono" id="modalClose" type="button" aria-label="Close dialog">ESC / CLOSE ✕</button>
+    </div>
+  </dialog>
+
+  <noscript>
+    <p class="noscript-note">Panosynth fuses many cameras and drones into a single real-time
+    3D/4D picture of the battlespace. Enable JavaScript to view the live terrain demonstration,
+    or contact panosynth@gmail.com.</p>
+  </noscript>
+
+  <script type="module" src="js/main.js"></script>
+  <script>
+    // ES modules are blocked on file:// — fall back to the static still
+    // and say so, instead of failing silently. Serve over HTTP for the
+    // live scene (e.g. `python3 -m http.server`), as Netlify will.
+    if (location.protocol === 'file:') {
+      document.getElementById('heroCanvas').hidden = true;
+      document.getElementById('heroStill').hidden = false;
+      var note = document.createElement('p');
+      note.className = 'file-banner mono';
+      note.textContent = 'STATIC PREVIEW — SERVE OVER HTTP FOR THE LIVE SCENE (e.g. python3 -m http.server)';
+      document.querySelector('.hero').appendChild(note);
+    }
+  </script>
+</body>
+</html>
