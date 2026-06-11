@@ -4,16 +4,24 @@
    Type: IBM Plex Mono (labels/telemetry) + Inter (body).
    ========================================================================= */
 
+/* Attractor-density palette: midnight navy -> cerulean -> teal-cyan ->
+   seafoam -> mint glow. Density reads as light; amber is detection-only. */
 :root {
-  --bg:        #05070A;
-  --bg-raise:  #0A0F14;
-  --teal:      #2DD4BF;
-  --teal-dim:  #14756A;
+  --bg:        #04060D;
+  --bg-raise:  #081020;
+  --navy:      #185388;
+  --cerulean:  #2F8BB7;
+  --teal:      #61B6C6;
+  --teal-dim:  #226A9E;
+  --seafoam:   #97D0C6;
+  --mint:      #CCEAD1;
+  --glow:      #E6FFFD;
+  --cream:     #F5F2E9;
   --amber:     #F5A524;
-  --ink:       #C9D4DC;
-  --ink-dim:   #7A8893;
-  --hairline:  rgba(45, 212, 191, 0.18);
-  --hairline-2:rgba(201, 212, 220, 0.10);
+  --ink:       #C7D1D6;
+  --ink-dim:   #76858E;
+  --hairline:  rgba(97, 182, 198, 0.18);
+  --hairline-2:rgba(199, 209, 214, 0.10);
   --mono:      'IBM Plex Mono', ui-monospace, monospace;
   --body:      'Inter', system-ui, sans-serif;
 }
@@ -34,7 +42,7 @@ body {
 
 .mono { font-family: var(--mono); }
 
-::selection { background: rgba(45, 212, 191, 0.25); }
+::selection { background: rgba(97, 182, 198, 0.25); }
 
 a { color: var(--teal); }
 
@@ -82,12 +90,8 @@ body::before {
 
 .topbar-right { display: flex; align-items: center; gap: 22px; }
 
-.topbar-status {
-  font-size: 11px; letter-spacing: 0.22em; color: var(--ink-dim);
-}
-.topbar-status.alert { color: var(--amber); }
 
-/* --- TRY PANOSYNTH: color-shifting CTA --- */
+/* --- TRY PANOSYNTH: color-shifting CTA (attractor sweep) --- */
 .cta-button {
   position: relative;
   font-family: var(--mono);
@@ -98,14 +102,14 @@ body::before {
   color: var(--bg);
   border: none;
   background: linear-gradient(110deg,
-    var(--teal) 0%, #5EEAD4 22%, var(--amber) 50%, #5EEAD4 78%, var(--teal) 100%);
+    var(--cerulean) 0%, var(--teal) 30%, var(--seafoam) 55%, var(--mint) 78%, var(--glow) 100%);
   background-size: 300% 100%;
   animation: cta-sweep 6s ease-in-out infinite;
-  box-shadow: 0 0 18px rgba(45, 212, 191, 0.35);
+  box-shadow: 0 0 18px rgba(97, 182, 198, 0.35);
   transition: box-shadow 0.3s ease;
 }
 .cta-button:hover, .cta-button:focus-visible {
-  box-shadow: 0 0 30px rgba(245, 165, 36, 0.45);
+  box-shadow: 0 0 30px rgba(204, 234, 209, 0.45);
 }
 .cta-button:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
@@ -125,7 +129,7 @@ body::before {
 .cta-button:focus-visible .cta-corners { opacity: 1; inset: -5px; }
 .cta-corners::before, .cta-corners::after {
   content: ''; position: absolute; width: 10px; height: 10px;
-  border: 1px solid var(--amber);
+  border: 1px solid var(--glow);
 }
 .cta-corners::before { top: 0; left: 0; border-right: none; border-bottom: none; }
 .cta-corners::after  { bottom: 0; right: 0; border-left: none; border-top: none; }
@@ -162,12 +166,27 @@ body::before {
   position: absolute;
   display: flex; flex-direction: column; gap: 3px;
   font-size: 10.5px; letter-spacing: 0.18em;
-  color: rgba(45, 212, 191, 0.65);
-  text-shadow: 0 0 8px rgba(45, 212, 191, 0.3);
+  color: rgba(97, 182, 198, 0.7);
+  text-shadow: 0 0 8px rgba(97, 182, 198, 0.3);
 }
 .hud-tl { top: 86px; left: 40px; }
 .hud-tr { top: 86px; right: 40px; text-align: right; }
 .hud-bl { bottom: 38px; left: 40px; }
+.hud-tc {
+  top: 86px; left: 50%; transform: translateX(-50%);
+  text-align: center;
+  font-size: 11.5px; letter-spacing: 0.34em;
+  color: rgba(151, 208, 198, 0.92);
+}
+#sysStatus.alert {
+  color: var(--amber);
+  text-shadow: 0 0 10px rgba(245, 165, 36, 0.5);
+  animation: alert-flicker 0.5s steps(2, end) infinite;
+}
+@keyframes alert-flicker {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.2; }
+}
 
 /* hero copy */
 .hero-copy {
@@ -190,8 +209,8 @@ body::before {
   font-size: clamp(30px, 5.2vw, 64px);
   line-height: 1.08;
   letter-spacing: 0.04em;
-  color: #EAF2F5;
-  text-shadow: 0 2px 30px rgba(5, 7, 10, 0.9);
+  color: var(--cream);
+  text-shadow: 0 2px 30px rgba(4, 6, 13, 0.9);
   margin-bottom: 20px;
 }
 
@@ -216,7 +235,7 @@ body::before {
 }
 .hero-cta:hover, .hero-cta:focus-visible {
   background: var(--teal); color: var(--bg);
-  box-shadow: 0 0 24px rgba(45, 212, 191, 0.4);
+  box-shadow: 0 0 24px rgba(97, 182, 198, 0.4);
 }
 .hero-cta:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
@@ -247,23 +266,35 @@ body::before {
   font-size: 9px; letter-spacing: 0.22em;
   white-space: nowrap;
   will-change: transform;
-  color: rgba(45, 212, 191, 0.85);
-  text-shadow: 0 0 6px rgba(45, 212, 191, 0.35);
+  color: rgba(97, 182, 198, 0.9);
+  text-shadow: 0 0 6px rgba(97, 182, 198, 0.35);
 }
 .scene-label.cam::before, .scene-label.drone::before {
   content: '▾ '; opacity: 0.55;
 }
-.scene-label.drone { color: rgba(94, 234, 212, 0.9); }
+.scene-label.drone { color: rgba(151, 208, 198, 0.95); }
 .scene-label.det {
   color: #E8E4DA;
   letter-spacing: 0.14em;
   line-height: 1.65;
-  background: rgba(5, 7, 10, 0.78);
+  background: rgba(4, 6, 13, 0.78);
   border: 1px solid rgba(245, 165, 36, 0.55);
   padding: 6px 10px;
   text-shadow: none;
+  animation: det-flicker 1.1s linear infinite;
 }
 .scene-label.det b { color: var(--amber); font-weight: 600; }
+/* hard, irregular amber flicker — alert cadence, not a soft pulse */
+@keyframes det-flicker {
+  0%, 100% { opacity: 1; }
+  6%       { opacity: 0.2; }
+  10%      { opacity: 1; }
+  14%      { opacity: 0.45; }
+  18%      { opacity: 1; }
+  54%      { opacity: 1; }
+  58%      { opacity: 0.3; }
+  63%      { opacity: 1; }
+}
 
 /* loop-reset dip (masks the timeline rewind) */
 .hero-dip {
@@ -274,55 +305,19 @@ body::before {
 }
 .hero-dip.on { opacity: 0.92; transition: opacity 0.7s ease; }
 
-/* ===================== CCTV WALL OVERLAY ===================== */
-.cctv-overlay {
-  position: absolute; inset: 0; z-index: 5;
-  display: none;
-  grid-template-columns: repeat(6, 1fr);
-  grid-template-rows: repeat(4, 1fr);
-  gap: 3px;
-  padding: 64px 24px 24px;
-  background: rgba(3, 4, 6, 0.88);
+/* atmospheric gradient wash over the 3D scene — radial "attractor glow"
+   (navy core -> cerulean -> nothing), screen-blended so black stays black */
+.hero-atmo {
+  position: absolute; inset: 0; z-index: 2;
   pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(55% 32% at 50% 55%,
+      rgba(47, 139, 183, 0.18), rgba(0, 19, 68, 0) 70%),
+    linear-gradient(180deg,
+      rgba(0, 19, 68, 0.30) 0%, rgba(0, 19, 68, 0) 38%,
+      rgba(0, 19, 68, 0) 72%, rgba(2, 38, 91, 0.25) 100%);
 }
-.cctv-overlay.show { display: grid; }
-
-.cctv-tile {
-  position: relative;
-  background-color: #0c1116;
-  background-size: 160px 160px;
-  border: 1px solid rgba(201, 212, 220, 0.12);
-  overflow: hidden;
-  opacity: 0;
-  transform: scale(0.96);
-  filter: saturate(0.2) contrast(1.15);
-}
-/* assemble: tiles pop in, hard steps — deliberately graceless */
-.cctv-overlay.show .cctv-tile {
-  animation: tile-in 0.18s steps(2, end) forwards;
-}
-@keyframes tile-in { to { opacity: 1; transform: scale(1); } }
-
-/* collapse: every tile flies to center and dissolves into the map */
-.cctv-overlay.collapse { background: transparent; transition: background 0.9s ease; }
-.cctv-overlay.collapse .cctv-tile {
-  animation: tile-collapse 0.85s cubic-bezier(0.55, 0, 0.2, 1) forwards;
-}
-@keyframes tile-collapse {
-  to {
-    opacity: 0;
-    transform: translate(var(--cx), var(--cy)) scale(0.05);
-    filter: saturate(0.2) brightness(2.5);
-  }
-}
-
-.cctv-label {
-  position: absolute; top: 5px; left: 7px;
-  font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em;
-  color: rgba(201, 212, 220, 0.6);
-}
-.cctv-tile.dead .cctv-label { color: rgba(245, 165, 36, 0.75); }
-.cctv-tile.dead { background-image: none !important; background-color: #07090c; }
 
 /* ===================== SECTIONS ===================== */
 .section {
@@ -337,7 +332,7 @@ body::before {
   margin-bottom: 54px;
 }
 .section-index {
-  font-size: 12px; color: var(--amber); letter-spacing: 0.2em;
+  font-size: 12px; color: var(--seafoam); letter-spacing: 0.2em;
 }
 .section-head h2 {
   font-size: 15px; font-weight: 600; letter-spacing: 0.42em;
@@ -371,7 +366,7 @@ body::before {
   display: block;
   font-size: clamp(34px, 4vw, 52px);
   font-weight: 600;
-  color: var(--amber);
+  color: var(--seafoam);
   line-height: 1;
   margin-bottom: 8px;
 }
@@ -411,17 +406,17 @@ body::before {
 }
 .card::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
 .card::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; }
-.card:hover { border-color: rgba(45, 212, 191, 0.45); }
+.card:hover { border-color: rgba(97, 182, 198, 0.45); }
 
 .card-tag {
   display: block;
   font-size: 10px; letter-spacing: 0.3em;
-  color: var(--amber);
+  color: var(--cerulean);
   margin-bottom: 18px;
 }
 .card h3 {
   font-size: 14px; font-weight: 600; letter-spacing: 0.18em;
-  color: #EAF2F5;
+  color: var(--cream);
   margin-bottom: 14px;
 }
 .card p { font-size: 14px; color: var(--ink); margin-bottom: 22px; }
@@ -460,7 +455,7 @@ body::before {
 .access-row input::placeholder { color: #46535d; }
 .access-row input:focus-visible {
   outline: none; border-color: var(--teal);
-  box-shadow: 0 0 0 1px var(--teal), 0 0 18px rgba(45, 212, 191, 0.18);
+  box-shadow: 0 0 0 1px var(--teal), 0 0 18px rgba(97, 182, 198, 0.18);
 }
 .access-row button {
   background: transparent;
@@ -525,12 +520,12 @@ body::before {
 
 .modal-tag {
   font-size: 10px; letter-spacing: 0.3em;
-  color: var(--amber);
+  color: var(--seafoam);
   margin-bottom: 14px;
 }
 .modal-frame h2 {
   font-size: 17px; font-weight: 600; letter-spacing: 0.16em;
-  color: #EAF2F5;
+  color: var(--cream);
   margin-bottom: 14px;
 }
 .modal-frame > p { font-size: 14px; margin-bottom: 24px; }
@@ -562,9 +557,7 @@ body::before {
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 900px) {
   .problem-grid, .cards { grid-template-columns: 1fr; }
-  .cctv-overlay { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(5, 1fr); }
   .hud-tr { display: none; }
-  .topbar-status { display: none; }
 }
 @media (max-width: 560px) {
   .topbar { padding: 12px 16px; }
@@ -573,8 +566,8 @@ body::before {
   .hero-copy { bottom: 9%; }
   .scanlines { display: none; }            /* cheaper compositing on mobile */
   .hud-readout { font-size: 9px; }
+  .hud-tc { font-size: 10px; width: max-content; }
   .access-inner { padding: 30px 22px; }
-  .cctv-overlay { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ===================== REDUCED MOTION ===================== */
@@ -582,7 +575,7 @@ body::before {
   html { scroll-behavior: auto; }
   .cta-button { animation: none; background-position: 25% 50%; }
   .reveal { opacity: 1; transform: none; transition: none; }
-  .cctv-overlay { display: none !important; }
+  .scene-label.det, #sysStatus.alert { animation: none; }
   .hero-dip { transition: none; }
   .scanlines { display: none; }
 }

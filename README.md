@@ -9,9 +9,9 @@ CDN via an import map; everything else is hand-rolled.
 | File | Role |
 | --- | --- |
 | `index.html` | Page structure, copy, modal, SVG fallback still |
-| `styles.css` | HUD visual language, CCTV overlay, responsive + reduced-motion rules |
+| `styles.css` | HUD visual language, attractor palette, responsive + reduced-motion rules |
 | `js/hero.js` | **Isolated hero scene module** — all 3D choreography |
-| `js/main.js` | DOM logic: telemetry tickers, CCTV overlay, forms, modal, reveals |
+| `js/main.js` | DOM logic: telemetry tickers, forms, modal, reveals |
 
 ## Run locally
 
@@ -26,9 +26,9 @@ python3 -m http.server 8000
 ### Inspecting a single choreography beat
 
 Append `?heroT=<0..1>` to freeze the hero at a normalized timeline position —
-useful while tuning. Examples: `?heroT=0.3` (drone sweep), `?heroT=0.55`
-(fusion in progress), `?heroT=0.7` (fused map / orbit), `?heroT=0.84`
-(CCTV wall).
+useful while tuning. Examples: `?heroT=0.3` (drone sweep), `?heroT=0.5`
+(detection beat), `?heroT=0.55` (fusion in progress), `?heroT=0.7`
+(fused map / orbit).
 
 ## Deploy to Netlify (GitHub → Netlify)
 
@@ -70,7 +70,7 @@ Everything choreographic lives in the exported `CHOREO` object at the top of
 
 - `loopSeconds` — total loop length (default 21 s).
 - `phases` — normalized timeline boundaries; `main.js` receives these names
-  via the `onPhase` callback and drives the CCTV overlay / status readouts
+  via the `onPhase` callback and drives the status readouts
   / loop-reset dip from them.
 - `camera` — closed Catmull-Rom keyframes (`pos` + `look`); index 0 is also
   the loop end, so the path is seamless. Add/move keys freely.

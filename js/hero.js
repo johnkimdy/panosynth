@@ -423,10 +423,75 @@ function buildFrustum({ len, w, h }) {
   fillGeo.setAttribute('position', new THREE.Float32BufferAttribute(
     [a, c1, c2, a, c2, c3, a, c3, c4, a, c4, c1].flat(), 3));
   group.add(new THREE.Mesh(fillGeo, new THREE.MeshBasicMaterial({
-    color: COL.teal, transparent: true, opacity: 0.045, side: THREE.DoubleSide,
+    color: COL.cer, transparent: true, opacity: 0.045, side: THREE.DoubleSide,
     blending: THREE.AdditiveBlending, depthWrite: false, fog: true,
   })));
   return group;
+}
+
+/* ============================================================================
+   FOV footprints — each sensor's frustum projected onto the terrain surface,
+   showing the live coverage area. A small grid of rays is cast through the
+   frustum every frame and marched against the heightfield; vertices land on
+   the surface, so the wedge hugs slopes and stops behind ridges (same
+   occlusion behaviour as the coverage simulation).
+   ========================================================================= */
+const FOOT_M = 9, FOOT_N = 5;                  // horizontal × depth samples
+
+function buildFootprints(sensorCount) {
+  const mat = new THREE.MeshBasicMaterial({
+    color: COL.cer, transparent: true, opacity: 0.055,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+    side: THREE.DoubleSide, fog: true,
+  });
+  const meshes = [];
+  for (let s = 0; s < sensorCount; s++) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(FOOT_M * FOOT_N * 3), 3));
+    const idx = [];
+    for (let j = 0; j < FOOT_N - 1; j++) for (let i = 0; i < FOOT_M - 1; i++) {
+      const a = j * FOOT_M + i, b = a + 1, c = a + FOOT_M, d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+    geo.setIndex(idx);
+    const m = new THREE.Mesh(geo, mat);
+    m.frustumCulled = false;
+    meshes.push(m);
+  }
+  return { meshes, mat };
+}
+
+function updateFootprint(mesh, sensor, P) {
+  mesh.visible = P.active;
+  if (!P.active) return;
+  const pos = mesh.geometry.attributes.position.array;
+  const cy = Math.cos(P.yaw), sy = Math.sin(P.yaw);
+  const cp = Math.cos(sensor.pitch), sp = Math.sin(sensor.pitch);
+  let k = 0;
+  for (let j = 0; j < FOOT_N; j++) {
+    // bias rays downward (bottom of the FOV up to +30% of the top) so every
+    // row intersects ground within range
+    const vy = -sensor.tanH + sensor.tanH * 1.3 * (j / (FOOT_N - 1));
+    for (let i = 0; i < FOOT_M; i++) {
+      const vx = ((i / (FOOT_M - 1)) - 0.5) * 2 * sensor.tanW;
+      // local ray (vx, vy, -1) -> world via Ry(yaw)·Rx(pitch)
+      const y2 = vy * cp + sp;
+      const z2 = vy * sp - cp;
+      const wx = cy * vx + sy * z2;
+      const wy = y2;
+      const wz = -sy * vx + cy * z2;
+      const inv = 1 / Math.hypot(vx, vy, 1);
+      const step = sensor.range / 14;
+      let x = P.x, y = P.y, z = P.z;
+      for (let s = 1; s <= 14; s++) {
+        const d = s * step * inv;
+        x = P.x + wx * d; y = P.y + wy * d; z = P.z + wz * d;
+        if (y <= terrainHeight(x, z) + 0.05) break;     // ray hit the surface
+      }
+      pos[k++] = x; pos[k++] = terrainHeight(x, z) + 0.08; pos[k++] = z;
+    }
+  }
+  mesh.geometry.attributes.position.needsUpdate = true;
 }
 
 /** Fixed post: mast from the ground up, sweeping PTZ head + small frustum. */
@@ -540,14 +605,15 @@ const POINT_VERT = /* glsl */`
     vec4 mv = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mv;
     float dist = max(-mv.z, 1.0);
-    gl_PointSize = uSize * uPx * (1.5 + 1.0 * f + 0.5 * aOver * f) * (160.0 / dist);
+    gl_PointSize = uSize * uPx * (1.35 + 0.3 * f + 0.25 * aOver * f) * (160.0 / dist);
     float fog = 1.0 - exp(-dist * 0.010);
-    vec3 cPre = mix(vec3(0.12, 0.58, 0.52), vec3(0.16, 0.52, 0.70), aTint);
-    vec3 col = mix(cPre, vec3(0.18, 0.83, 0.75), f);
-    col = mix(col, vec3(0.82, 0.96, 0.92), aOver * 0.45 * f); // synthesized overlap
-    if (aRand > 0.985) col = vec3(0.96, 0.65, 0.14);
+    // attractor density colormap: navy/cerulean sub-clouds -> teal fused map,
+    // overlap (2+ sensors) drifts toward seafoam — density reads as light
+    vec3 cPre = mix(vec3(0.095, 0.33, 0.53), vec3(0.185, 0.545, 0.72), aTint);
+    vec3 col = mix(cPre, vec3(0.275, 0.59, 0.69), f);
+    col = mix(col, vec3(0.59, 0.82, 0.78), aOver * 0.4 * f);
     vColor = col;
-    vAlpha = seen * (0.35 + 0.55 * f) * uGlow * (1.0 - fog * 0.9);
+    vAlpha = seen * (0.32 + 0.20 * f) * uGlow * (1.0 - fog * 0.9);
     vAlpha *= 1.0 - smoothstep(0.945, 0.99, uT);            // reset rewind
   }`;
 const POINT_FRAG = /* glsl */`
@@ -645,10 +711,11 @@ function buildPlatoon(CH) {
   }));
   blink.scale.set(1, 1, 1);
   group.add(blink);
-  // wireframe track box
+  // wireframe track box, oriented along the march direction
   const box = new THREE.LineSegments(
     new THREE.EdgesGeometry(new THREE.BoxGeometry(...cfg.boxSize)),
     new THREE.LineBasicMaterial({ color: COL.amber, transparent: true, opacity: 0 }));
+  box.rotation.y = Math.atan2(dir.x, dir.z);   // local +z -> march direction
   group.add(box);
   return { group, figures, blink, box, mat, dir, perp };
 }
@@ -741,6 +808,11 @@ export function initHero(canvas, opts = {}) {
   scene.add(points);
   const uni = points.material.uniforms;
 
+  /* --- FOV footprints projected onto the terrain ---------------------------- */
+  const feet = buildFootprints(cov.sensors.length);
+  scene.add(...feet.meshes);
+  let footTick = 0;
+
   /* --- platoon + detection ------------------------------------------------- */
   const platoon = buildPlatoon(CH);
   scene.add(platoon.group);
@@ -819,10 +891,17 @@ export function initHero(canvas, opts = {}) {
     camera.position.copy(camPos);
     camera.lookAt(camLook);
 
+    // footprints are ray-marched against the heightfield — refresh every
+    // other frame below the high tier
+    const updateFeet = quality === 'high' || (footTick++ & 1) === 0;
+    feet.mat.opacity = 0.055 * (1 - env(t, 0.93, 0.98));
+
     // posts: head yaw from the SAME pose function the simulation used
     posts.forEach((p, i) => {
-      cov.sensors[i].pose(t, pose);
+      const s = cov.sensors[i];
+      s.pose(t, pose);
       p.userData.head.rotation.y = pose.yaw;
+      if (updateFeet) updateFootprint(feet.meshes[i], s, pose);
     });
 
     // drones: pose + rotor spin
@@ -833,6 +912,7 @@ export function initHero(canvas, opts = {}) {
       d.rotation.y = pose.yaw;
       d.visible = pose.active || t < CH.drones[j].delay + CH.drones[j].dur;
       for (const r of d.userData.rotors) r.rotation.y = time * 38 + r.id;
+      if (updateFeet) updateFootprint(feet.meshes[CH.nodes.length + j], s, pose);
     });
 
     // platoon walk + thermal flicker
@@ -846,24 +926,31 @@ export function initHero(canvas, opts = {}) {
       const z = centroid.z + platoon.dir.z * u.along + platoon.perp.z * u.side;
       f.position.set(x, terrainHeight(x, z) + 0.26 + Math.abs(Math.sin(time * 2.6 + u.ph)) * 0.05, z);
     }
+    // the formation trails the centroid: rows sit at along ∈ [-3, 0], so the
+    // box centers mid-column on the actual figures, on the actual terrain
+    const bx = centroid.x + platoon.dir.x * -1.5;
+    const bz = centroid.z + platoon.dir.z * -1.5;
+    const by = terrainHeight(bx, bz);
+
     // detection: single off-white blink, then the track box locks on
     const bp = (t - detection.t) / 0.022;
     if (bp >= 0 && bp <= 1) {
-      platoon.blink.position.copy(centroid).y += 0.4;
+      platoon.blink.position.set(bx, by + 0.9, bz);
       platoon.blink.scale.setScalar(2 + 7 * bp);
       platoon.blink.material.opacity = (1 - bp) * alive;
     } else {
       platoon.blink.material.opacity = 0;
     }
     const locked = t >= detection.t && t < 0.94 ? 1 : 0;
-    platoon.box.material.opacity = locked * alive * (0.55 + 0.2 * Math.sin(time * 9));
-    platoon.box.position.copy(centroid).y += 0.55;
-    detAnchor.copy(centroid).y += CH.platoon.boxSize[1] * 0.5 + 0.6;
+    // hard on/off flicker reads as an alert, not a glow
+    platoon.box.material.opacity = locked * alive * (Math.sin(time * 9) > -0.15 ? 0.9 : 0.25);
+    platoon.box.position.set(bx, by + CH.platoon.boxSize[1] * 0.5 + 0.12, bz);
+    detAnchor.set(bx, by + CH.platoon.boxSize[1] + 0.6, bz);
 
-    // point cloud envelopes
+    // point cloud envelopes — fused map sits still at constant brightness
     uni.uT.value = t;
     uni.uFuse.value = env(t, CH.fuse[0], CH.fuse[1]) * (1 - env(t, CH.unfuse[0], CH.unfuse[1]));
-    uni.uGlow.value = 1 + env(t, 0.62, 0.72) * 0.45 - env(t, 0.94, 0.99) * 0.6;
+    uni.uGlow.value = 1 + env(t, 0.62, 0.72) * 0.12 - env(t, 0.94, 0.99) * 0.5;
     uni.uTime.value = time;
 
     labels.update(camera, canvas.clientWidth, canvas.clientHeight, t);

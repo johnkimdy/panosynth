@@ -22,7 +22,6 @@
       <span class="wordmark-tick" aria-hidden="true"></span>PANOSYNTH
     </div>
     <div class="topbar-right">
-      <span class="topbar-status mono" id="sysStatus" aria-live="off">SYS // STANDBY</span>
       <button class="cta-button" id="ctaTry" type="button">
         <span class="cta-label">TRY PANOSYNTH</span>
         <span class="cta-corners" aria-hidden="true"></span>
@@ -41,23 +40,23 @@
         <svg viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Stylized dark ridgeline terrain with camera view-cones fused into one glowing 3D point-cloud map">
           <defs>
             <linearGradient id="haze" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#0a1318"/><stop offset="1" stop-color="#05070A"/>
+              <stop offset="0" stop-color="#071226"/><stop offset="1" stop-color="#04060D"/>
             </linearGradient>
             <radialGradient id="mapGlow" cx="0.5" cy="0.62" r="0.5">
-              <stop offset="0" stop-color="#2DD4BF" stop-opacity="0.35"/>
-              <stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/>
+              <stop offset="0" stop-color="#2F8BB7" stop-opacity="0.35"/>
+              <stop offset="1" stop-color="#001344" stop-opacity="0"/>
             </radialGradient>
           </defs>
           <rect width="1200" height="600" fill="url(#haze)"/>
           <ellipse cx="600" cy="380" rx="420" ry="170" fill="url(#mapGlow)"/>
-          <polyline points="0,330 120,250 230,310 360,210 480,290 620,190 760,280 880,220 1010,300 1120,240 1200,290" fill="none" stroke="#1d3a3c" stroke-width="1.5"/>
-          <polyline points="0,400 150,330 280,380 420,300 560,370 700,290 840,360 980,310 1120,370 1200,340" fill="none" stroke="#15282b" stroke-width="1.5"/>
-          <polyline points="0,470 180,420 340,460 520,400 700,450 880,400 1060,450 1200,420" fill="none" stroke="#0e1c1f" stroke-width="1.5"/>
-          <g stroke="#2DD4BF" stroke-width="1" fill="none" opacity="0.7">
+          <polyline points="0,330 120,250 230,310 360,210 480,290 620,190 760,280 880,220 1010,300 1120,240 1200,290" fill="none" stroke="#15528B" stroke-width="1.5"/>
+          <polyline points="0,400 150,330 280,380 420,300 560,370 700,290 840,360 980,310 1120,370 1200,340" fill="none" stroke="#0E3A60" stroke-width="1.5"/>
+          <polyline points="0,470 180,420 340,460 520,400 700,450 880,400 1060,450 1200,420" fill="none" stroke="#082642" stroke-width="1.5"/>
+          <g stroke="#61B6C6" stroke-width="1" fill="none" opacity="0.7">
             <path d="M360 210 L320 150 M360 210 L420 145 M320 150 L420 145"/>
             <path d="M760 280 L715 215 M760 280 L820 210 M715 215 L820 210"/>
           </g>
-          <g fill="#2DD4BF">
+          <g fill="#61B6C6">
             <circle cx="500" cy="350" r="1.6" opacity="0.8"/><circle cx="540" cy="330" r="1.4" opacity="0.6"/>
             <circle cx="585" cy="345" r="1.7" opacity="0.9"/><circle cx="630" cy="325" r="1.4" opacity="0.7"/>
             <circle cx="670" cy="350" r="1.6" opacity="0.8"/><circle cx="560" cy="370" r="1.3" opacity="0.5"/>
@@ -69,24 +68,27 @@
       </div>
 
       <!-- HUD chrome -->
-      <div class="hero-hud" aria-hidden="true">
-        <span class="hud-corner tl"></span><span class="hud-corner tr"></span>
-        <span class="hud-corner bl"></span><span class="hud-corner br"></span>
-        <div class="hud-readout hud-tl mono">
+      <div class="hero-hud">
+        <span class="hud-corner tl" aria-hidden="true"></span><span class="hud-corner tr" aria-hidden="true"></span>
+        <span class="hud-corner bl" aria-hidden="true"></span><span class="hud-corner br" aria-hidden="true"></span>
+        <div class="hud-readout hud-tc mono">
+          <span id="sysStatus" aria-live="off">SYS // STANDBY</span>
+        </div>
+        <div class="hud-readout hud-tl mono" aria-hidden="true">
           <span id="hudGrid">GRID 38N 0412 7731</span>
           <span id="hudAz">AZ 274.6° · EL +03.2°</span>
         </div>
-        <div class="hud-readout hud-tr mono">
+        <div class="hud-readout hud-tr mono" aria-hidden="true">
           <span>NODES 06 · SWARMS 03</span>
           <span id="hudFusion">FUSION 00.0%</span>
         </div>
-        <div class="hud-readout hud-bl mono">
+        <div class="hud-readout hud-bl mono" aria-hidden="true">
           <span id="hudClock">T+00:00:00</span>
         </div>
       </div>
 
-      <!-- Legacy CCTV wall overlay (contrast cut, built by main.js) -->
-      <div class="cctv-overlay" id="cctvOverlay" aria-hidden="true"></div>
+      <!-- atmospheric gradient wash (attractor palette, screen-blended) -->
+      <div class="hero-atmo" aria-hidden="true"></div>
 
       <!-- Loop-reset dip -->
       <div class="hero-dip" id="heroDip" aria-hidden="true"></div>
